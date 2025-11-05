@@ -58,11 +58,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Create database if it doesn't exist
+// Create database if it doesn't exist and seed admin user
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.EnsureCreated();
+    await DatabaseSeeder.SeedAdminUser(context);
 }
 
 // Configure the HTTP request pipeline.
@@ -70,8 +71,11 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+else
+{
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
