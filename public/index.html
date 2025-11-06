@@ -112,6 +112,19 @@
                 </div>
             </section>
 
+            <section id="adminUsersSection" class="admin-panel hidden">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3>Gestión de usuarios</h3>
+                        <p class="admin-panel-subtitle">Administra las cuentas registradas en la plataforma</p>
+                    </div>
+                    <button id="refreshUsersBtn" class="btn btn-light" type="button">Actualizar</button>
+                </div>
+                <div id="adminUsersList" class="admin-users-list">
+                    <p class="text-center">Cargando usuarios...</p>
+                </div>
+            </section>
+
             <h3 class="filters-title">Búsqueda por filtros</h3>
             <form id="filtersForm" class="filters">
                 <div class="form-group">
@@ -172,6 +185,35 @@
                 <div class="modal-actions">
                     <button type="button" id="cancelTaskBtn" class="btn btn-secondary">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="userModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="userModalTitle">Editar usuario</h3>
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="userUsername">Usuario</label>
+                    <input type="text" id="userUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="userEmail">Email</label>
+                    <input type="email" id="userEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="userRole">Rol</label>
+                    <select id="userRole" name="role">
+                        <option value="user">Usuario</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div id="userError" class="error"></div>
+                <div class="modal-actions">
+                    <button type="button" id="cancelUserBtn" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </div>
             </form>
         </div>

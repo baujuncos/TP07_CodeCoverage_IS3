@@ -9,6 +9,7 @@ const { initDb } = require('./src/config/database');
 const { seedAdmin } = require('./src/seed');
 const authRoutes = require('./src/routes/auth');
 const taskRoutes = require('./src/routes/tasks');
+const userRoutes = require('./src/routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +43,7 @@ app.use('/uploads', express.static(uploadsDir));
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

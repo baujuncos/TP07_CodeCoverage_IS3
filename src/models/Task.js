@@ -115,6 +115,28 @@ const includeAttachments = async (tasks = [], options = {}) => {
 const getAttachmentsByTaskId = (taskId, options = {}) =>
   fetchAttachmentsForTaskIds([taskId], options).then((map) => map[taskId] || []);
 
+const fetchAttachmentFilePathsByUserId = (userId) => {
+  return new Promise((resolve, reject) => {
+    const query = `
+      SELECT ta.file_path
+      FROM task_attachments ta
+      INNER JOIN tasks t ON ta.task_id = t.id
+      WHERE t.user_id = ?
+    `;
+
+    db.all(query, [userId], (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        const paths = (rows || [])
+          .map((row) => (row && typeof row.file_path === 'string' ? row.file_path : ''))
+          .filter((filePath) => Boolean(filePath));
+        resolve(paths);
+      }
+    });
+  });
+};
+
 const findAttachmentRowById = (attachmentId, options = {}) => {
   return new Promise((resolve, reject) => {
     const query = `
@@ -422,6 +444,22 @@ const Task = {
         reject(error);
       }
     });
+  },
+
+  getAttachmentFilePathsForUser: (userId) => fetchAttachmentFilePathsByUserId(userId),
+
+  removeAttachmentFiles: async (filePaths = []) => {
+    const paths = Array.isArray(filePaths) ? filePaths : [];
+
+    await Promise.all(
+      paths.map(async (storedPath) => {
+        try {
+          await removeStoredFile(storedPath);
+        } catch (error) {
+          console.error('Error removing attachment file during user cleanup:', error);
+        }
+      })
+    );
   }
 };
 

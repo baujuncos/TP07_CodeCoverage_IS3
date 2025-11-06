@@ -8,6 +8,8 @@ let isViewingAllTasks = false;
 let editingTaskId = null;
 let currentFilters = { status: 'all', startDate: '', endDate: '', search: '' };
 let currentTasks = [];
+let currentUsers = [];
+let editingUserId = null;
 
 // DOM Elements
 const loginPage = document.getElementById('loginPage');
@@ -35,6 +37,17 @@ const statsTotalValue = document.getElementById('statsTotal');
 const statsProgressText = document.getElementById('statsProgressText');
 const statsProgressBar = document.getElementById('statsProgressBar');
 const taskAttachmentsInput = document.getElementById('taskAttachments');
+const adminUsersSection = document.getElementById('adminUsersSection');
+const adminUsersList = document.getElementById('adminUsersList');
+const refreshUsersBtn = document.getElementById('refreshUsersBtn');
+const userModal = document.getElementById('userModal');
+const userForm = document.getElementById('userForm');
+const userModalTitle = document.getElementById('userModalTitle');
+const userError = document.getElementById('userError');
+const userUsernameInput = document.getElementById('userUsername');
+const userEmailInput = document.getElementById('userEmail');
+const userRoleSelect = document.getElementById('userRole');
+const cancelUserBtn = document.getElementById('cancelUserBtn');
 
 // Check if user is logged in
 window.addEventListener('DOMContentLoaded', () => {
@@ -67,15 +80,8 @@ function showTasksPage() {
     loginPage.classList.add('hidden');
     registerPage.classList.add('hidden');
     tasksPage.classList.remove('hidden');
-    
-    userInfo.textContent = `👤 ${currentUser.username} ${currentUser.role === 'admin' ? '(Admin)' : ''}`;
-    
-    // Show toggle button only for admin
-    if (currentUser.role === 'admin') {
-        toggleViewBtn.classList.remove('hidden');
-    } else {
-        toggleViewBtn.classList.add('hidden');
-    }
+
+    updateUserHeader();
 
     if (filtersForm) {
         filtersForm.reset();
@@ -84,6 +90,10 @@ function showTasksPage() {
 
     updateStatsSubtitle();
     loadTasks();
+
+    if (currentUser?.role === 'admin') {
+        loadUsers();
+    }
 }
 
 // Login
@@ -402,6 +412,61 @@ if (clearFiltersBtn && filtersForm) {
     });
 }
 
+if (refreshUsersBtn) {
+    refreshUsersBtn.addEventListener('click', () => {
+        loadUsers();
+    });
+}
+
+if (cancelUserBtn) {
+    cancelUserBtn.addEventListener('click', () => {
+        closeUserModal();
+    });
+}
+
+if (userForm) {
+    userForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!Number.isInteger(editingUserId)) {
+            return;
+        }
+
+        const username = userUsernameInput.value.trim();
+        const email = userEmailInput.value.trim();
+        const role = userRoleSelect.value;
+
+        try {
+            const response = await fetch(`${API_URL}/users/${editingUserId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentToken}`
+                },
+                body: JSON.stringify({ username, email, role })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                closeUserModal();
+                if (data.user && data.user.id === currentUser.id) {
+                    currentUser = data.user;
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    updateUserHeader();
+                    updateStatsSubtitle();
+                    loadTasks();
+                }
+                loadUsers();
+            } else {
+                showError(userError, data.message || 'Error al actualizar usuario');
+            }
+        } catch (error) {
+            showError(userError, 'Error de conexión al actualizar');
+        }
+    });
+}
+
 // Toggle view (admin only)
 toggleViewBtn.addEventListener('click', () => {
     isViewingAllTasks = !isViewingAllTasks;
@@ -556,6 +621,192 @@ async function deleteAttachment(taskId, attachmentId) {
         }
     } catch (error) {
         alert('Error de conexión al eliminar el archivo');
+    }
+}
+
+function setUsersLoading() {
+    if (!adminUsersList) {
+        return;
+    }
+
+    adminUsersList.innerHTML = '<p class="text-center">Cargando usuarios...</p>';
+}
+
+function setUsersError() {
+    if (!adminUsersList) {
+        return;
+    }
+
+    adminUsersList.innerHTML = '<p class="text-center error-message">No se pudieron cargar los usuarios</p>';
+}
+
+async function loadUsers() {
+    if (!currentToken || currentUser?.role !== 'admin') {
+        return;
+    }
+
+    setUsersLoading();
+
+    try {
+        const response = await fetch(`${API_URL}/users`, {
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        if (response.ok) {
+            const users = await response.json();
+            displayUsers(users);
+        } else if (response.status === 401) {
+            logout();
+        } else {
+            setUsersError();
+        }
+    } catch (error) {
+        setUsersError();
+    }
+}
+
+function displayUsers(users) {
+    if (!adminUsersList) {
+        return;
+    }
+
+    currentUsers = Array.isArray(users) ? users : [];
+
+    if (currentUsers.length === 0) {
+        adminUsersList.innerHTML = `
+            <div class="admin-empty-state">
+                <h4>No hay usuarios registrados</h4>
+                <p>Las cuentas nuevas aparecerán aquí automáticamente.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const formatter = new Intl.DateTimeFormat('es-ES');
+
+    adminUsersList.innerHTML = currentUsers.map((user) => {
+        const isCurrentUser = user.id === currentUser.id;
+        const roleLabel = user.role === 'admin' ? 'Administrador' : 'Usuario';
+        const createdAtLabel = user.created_at ? formatter.format(new Date(user.created_at)) : '';
+        const deleteButton = isCurrentUser
+            ? '<button class="btn btn-danger" disabled title="No puedes eliminar tu propia cuenta">Eliminar</button>'
+            : `<button class="btn btn-danger" onclick="deleteUserAccount(${user.id})">Eliminar</button>`;
+
+        return `
+            <div class="user-card">
+                <div class="user-card-info">
+                    <h4>${escapeHtml(user.username)}</h4>
+                    <p class="user-card-email">${escapeHtml(user.email)}</p>
+                    <div class="user-card-meta">
+                        <span class="user-role-badge ${user.role === 'admin' ? 'admin' : ''}">${roleLabel}</span>
+                        ${createdAtLabel ? `<span class="user-date">Creado: ${createdAtLabel}</span>` : ''}
+                    </div>
+                </div>
+                <div class="user-card-actions">
+                    <button class="btn btn-primary" onclick="openUserModal(${user.id})">Editar</button>
+                    ${deleteButton}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function openUserModal(userId) {
+    const numericId = Number(userId);
+    const user = currentUsers.find((item) => item.id === numericId);
+
+    if (!user) {
+        alert('No se encontró el usuario seleccionado');
+        return;
+    }
+
+    editingUserId = numericId;
+    userUsernameInput.value = user.username || '';
+    userEmailInput.value = user.email || '';
+    userRoleSelect.value = user.role || 'user';
+    userModalTitle.textContent = `Editar usuario #${userId}`;
+    if (userError) {
+        userError.textContent = '';
+        userError.classList.remove('show');
+    }
+
+    userModal.classList.remove('hidden');
+}
+
+function closeUserModal() {
+    editingUserId = null;
+    if (userForm) {
+        userForm.reset();
+    }
+    if (userError) {
+        userError.textContent = '';
+        userError.classList.remove('show');
+    }
+    userModal.classList.add('hidden');
+}
+
+async function deleteUserAccount(userId) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este usuario? Se borrarán todas sus tareas.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        if (response.ok) {
+            loadUsers();
+            if (isViewingAllTasks) {
+                loadTasks();
+            }
+        } else if (response.status === 401) {
+            logout();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'No se pudo eliminar el usuario');
+        }
+    } catch (error) {
+        alert('Error de conexión al eliminar el usuario');
+    }
+}
+
+function updateUserHeader() {
+    if (!currentUser) {
+        return;
+    }
+
+    if (userInfo) {
+        userInfo.textContent = `👤 ${currentUser.username} ${currentUser.role === 'admin' ? '(Admin)' : ''}`;
+    }
+
+    const isAdmin = currentUser.role === 'admin';
+
+    if (isAdmin) {
+        toggleViewBtn.classList.remove('hidden');
+        if (adminUsersSection) {
+            adminUsersSection.classList.remove('hidden');
+        }
+    } else {
+        toggleViewBtn.classList.add('hidden');
+        if (adminUsersSection) {
+            adminUsersSection.classList.add('hidden');
+        }
+        if (adminUsersList) {
+            adminUsersList.innerHTML = '<p class="text-center">Funcionalidad disponible solo para administradores.</p>';
+        }
+        if (isViewingAllTasks) {
+            isViewingAllTasks = false;
+        }
+    }
+
+    if (toggleViewBtn) {
+        toggleViewBtn.textContent = isViewingAllTasks ? 'Ver Mis Tareas' : 'Ver Todas las Tareas';
+    }
+
+    if (tasksTitle) {
+        tasksTitle.textContent = isViewingAllTasks && isAdmin ? 'Todas las Tareas' : 'Mis Tareas';
     }
 }
 
