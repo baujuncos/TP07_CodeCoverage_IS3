@@ -10,6 +10,10 @@ pool:
 
 variables:
   NODE_VERSION: '18.x'
+  NODE_ENV: 'test'
+  DATABASE_PATH: ':memory:'
+  JWT_SECRET: 'test-secret-key-ci-pipeline'
+  PORT: '3001'
 
 stages:
   - stage: Build_and_Test
@@ -28,31 +32,70 @@ stages:
               versionSpec: $(NODE_VERSION)
             displayName: 'Install Node.js $(NODE_VERSION)'
 
-          # 3. Instalar dependencias
+          # 3. Limpiar cache de npm (evitar problemas)
+          - script: |
+              npm cache clean --force
+            displayName: 'Clean npm cache'
+            continueOnError: true
+
+          # 4. Instalar dependencias
           - script: |
               npm ci
-            displayName: 'npm install'
+            displayName: 'npm ci (clean install)'
 
-          # 4. Ejecutar tests con cobertura
+          # 5. Verificar instalación
+          - script: |
+              node --version
+              npm --version
+              npm list jest jest-junit || true
+            displayName: 'Verify environment'
+
+          # 6. Crear directorios necesarios
+          - script: |
+              mkdir -p test-results coverage
+            displayName: 'Create output directories'
+
+          # 7. Ejecutar tests con cobertura
           - script: |
               npm run test:ci
             displayName: 'Run tests with coverage'
             env:
               NODE_ENV: test
+              CI: true
+              DATABASE_PATH: ':memory:'
+              JWT_SECRET: 'test-secret-key-ci-pipeline'
+              PORT: 3001
 
-          # 5. Publicar resultados de tests
+          # 8. Verificar archivos generados
+          - script: |
+              echo "=== Test Results Directory ==="
+              ls -la test-results/ || echo "test-results not found"
+              if [ -f test-results/junit.xml ]; then
+                echo "✅ junit.xml found"
+                head -20 test-results/junit.xml
+              else
+                echo "❌ junit.xml NOT found"
+              fi
+              echo ""
+              echo "=== Coverage Directory ==="
+              ls -la coverage/ || echo "coverage not found"
+            displayName: 'Verify generated files'
+            condition: always()
+
+          # 9. Publicar resultados de tests
           - task: PublishTestResults@2
             displayName: 'Publish Test Results'
             condition: succeededOrFailed()
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: '**/test-results/junit.xml'
+              testResultsFiles: '**/junit.xml'
               searchFolder: '$(System.DefaultWorkingDirectory)'
               mergeTestResults: true
               failTaskOnFailedTests: true
               testRunTitle: 'TikTask Tests - $(Build.BuildNumber)'
+              publishRunAttachments: true
 
-          # 6. Publicar cobertura de código
+          # 10. Publicar cobertura de código
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish Code Coverage'
             condition: succeededOrFailed()
@@ -62,10 +105,10 @@ stages:
               reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
               failIfCoverageEmpty: false
 
-          # 7. Publicar artefactos (opcional)
+          # 11. Publicar artefactos
           - task: PublishBuildArtifacts@1
-            displayName: 'Publish Artifacts'
-            condition: succeeded()
+            displayName: 'Publish Build Artifacts'
+            condition: succeededOrFailed()
             inputs:
               PathtoPublish: '$(System.DefaultWorkingDirectory)'
               ArtifactName: 'drop'

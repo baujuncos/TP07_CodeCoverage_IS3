@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage lines-valid="1111" lines-covered="483" line-rate="0.4347" branches-valid="610" branches-covered="172" branch-rate="0.28190000000000004" timestamp="1762552514772" complexity="0" version="0.1">
+<coverage lines-valid="1111" lines-covered="483" line-rate="0.4347" branches-valid="610" branches-covered="172" branch-rate="0.28190000000000004" timestamp="1762555046362" complexity="0" version="0.1">
   <sources>
     <source>/Users/belutreachi/Desktop/FACULTAD/ing-soft-3/TP06_UnitTests_IS3</source>
   </sources>

@@ -2,12 +2,24 @@
 module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
+  
+  // Importante: aumentar timeouts para CI
+  testTimeout: 30000, // 30 segundos por test
+  
+  // Cobertura
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'cobertura'], // Agregado 'cobertura' para Azure
+  coverageReporters: ['text', 'lcov', 'cobertura'],
   coverageThreshold: {
-    global: { lines: 20, functions: 20, branches: 10, statements: 20 }
+    global: { 
+      lines: 20, 
+      functions: 20, 
+      branches: 10, 
+      statements: 20 
+    }
   },
+  
+  // Setup files
   setupFilesAfterEnv: [
     '<rootDir>/tests/setupTests.js',
     '<rootDir>/tests/frontend/setupFrontend.js'
@@ -22,11 +34,27 @@ module.exports = {
         outputDirectory: './test-results',
         outputName: 'junit.xml',
         ancestorSeparator: ' › ',
-        uniqueOutputName: 'false',
+        uniqueOutputName: false,
         suiteNameTemplate: '{filepath}',
         classNameTemplate: '{classname}',
-        titleTemplate: '{title}'
+        titleTemplate: '{title}',
+        addFileAttribute: true
       }
     ]
-  ]
+  ],
+  
+  // Configuración para CI
+  maxWorkers: process.env.CI ? 1 : undefined, // En CI: un worker a la vez
+  
+  // Detectar leaks de memoria
+  detectLeaks: false,
+  
+  // Verbose en CI para mejor debugging
+  verbose: process.env.CI === 'true',
+  
+  // Forzar salida después de los tests
+  forceExit: true,
+  
+  // No cachear en CI
+  cache: process.env.CI !== 'true'
 };

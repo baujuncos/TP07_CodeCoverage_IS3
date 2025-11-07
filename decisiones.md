@@ -511,3 +511,27 @@ Luego actualizamos el archivo `package.json`.
 ### 6.3. Crear el Pipeline de Azure DevOps
 Creamos el archivo `azure-pipelines.yml` en la raíz del proyecto.
 
+### 6.4. Probar localmente los tests
+Con:
+```bash
+npm run test:ci
+```
+Obtenemos:
+![alt text](image-24.png)
+
+### 6.4. Subir todo a Azure DevOps
+En la terminal:
+```bash
+git add .
+git commit -m "feat: Add CI/CD pipeline with test reporting"
+git push origin main
+```
+
+### 6.5. Configurar en Azure DevOps
+1. Creo un nuevo proyecto llamado *TP5-UnitTests*
+![alt text](image-25.png)
+2. Voy a *Pipelines → Create Pipeline → GitHub*
+3. Elijo mi repositorio
+4. Corro el pipeline haciendo click en *Run*
+![alt text](image-26.png)
+5. 
