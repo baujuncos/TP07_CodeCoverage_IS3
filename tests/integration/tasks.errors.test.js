@@ -8,7 +8,7 @@ function uniqueUser() {
 describe('Tasks Routes - Error Handling', () => {
   let token;
   let adminToken;
-  let taskId;
+  let baseTaskId;
 
   beforeAll(async () => {
     // Create regular user
@@ -28,25 +28,15 @@ describe('Tasks Routes - Error Handling', () => {
       .send({ username: 'admin', password: 'Admin123!' });
     adminToken = adminLogin.body.token;
 
-    // Create a test task
+    // Create a base test task
     const taskRes = await request(app)
       .post('/api/tasks')
       .set('Authorization', `Bearer ${token}`)
-      .field('title', 'Test Task');
-    taskId = taskRes.body.id;
+      .field('title', 'Base Test Task');
+    baseTaskId = taskRes.body.id;
   });
 
   describe('PATCH /api/tasks/:id/complete', () => {
-    let userTask;
-
-    beforeAll(async () => {
-      const taskRes = await request(app)
-        .post('/api/tasks')
-        .set('Authorization', `Bearer ${token}`)
-        .field('title', 'Task for Complete Test');
-      userTask = taskRes.body.id;
-    });
-
     test('❌ Cannot complete non-existent task', async () => {
       const res = await request(app)
         .patch('/api/tasks/999999/complete')
@@ -56,6 +46,13 @@ describe('Tasks Routes - Error Handling', () => {
     });
 
     test('❌ Cannot complete other user task', async () => {
+      // Create a task with the first user
+      const task1Res = await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${token}`)
+        .field('title', 'Task for Another User Complete Test');
+      const task1Id = task1Res.body.id;
+
       // Create another user
       const username2 = uniqueUser();
       const registerRes2 = await request(app)
@@ -68,15 +65,22 @@ describe('Tasks Routes - Error Handling', () => {
       const token2 = registerRes2.body.token;
 
       const res = await request(app)
-        .patch(`/api/tasks/${userTask}/complete`)
+        .patch(`/api/tasks/${task1Id}/complete`)
         .set('Authorization', `Bearer ${token2}`);
 
       expect(res.status).toBe(403);
     });
 
     test('✅ User can complete their own task', async () => {
+      // Create a fresh task for this test
+      const taskRes = await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${token}`)
+        .field('title', 'Task for Complete Own Test');
+      const taskId = taskRes.body.id;
+
       const res = await request(app)
-        .patch(`/api/tasks/${userTask}/complete`)
+        .patch(`/api/tasks/${taskId}/complete`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
@@ -85,16 +89,6 @@ describe('Tasks Routes - Error Handling', () => {
   });
 
   describe('DELETE /api/tasks/:id', () => {
-    let taskToDelete;
-
-    beforeAll(async () => {
-      const taskRes = await request(app)
-        .post('/api/tasks')
-        .set('Authorization', `Bearer ${token}`)
-        .field('title', 'Task to Delete');
-      taskToDelete = taskRes.body.id;
-    });
-
     test('❌ Cannot delete non-existent task', async () => {
       const res = await request(app)
         .delete('/api/tasks/999999')
@@ -104,6 +98,13 @@ describe('Tasks Routes - Error Handling', () => {
     });
 
     test('❌ Cannot delete other user task', async () => {
+      // Create a task with the first user
+      const task1Res = await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${token}`)
+        .field('title', 'Task for Another User Delete Test');
+      const task1Id = task1Res.body.id;
+
       // Create another user
       const username2 = uniqueUser();
       const registerRes2 = await request(app)
@@ -116,15 +117,22 @@ describe('Tasks Routes - Error Handling', () => {
       const token2 = registerRes2.body.token;
 
       const res = await request(app)
-        .delete(`/api/tasks/${taskToDelete}`)
+        .delete(`/api/tasks/${task1Id}`)
         .set('Authorization', `Bearer ${token2}`);
 
       expect(res.status).toBe(403);
     });
 
     test('✅ User can delete their own task', async () => {
+      // Create a fresh task for this test
+      const taskRes = await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${token}`)
+        .field('title', 'Task for Delete Own Test');
+      const taskId = taskRes.body.id;
+
       const res = await request(app)
-        .delete(`/api/tasks/${taskToDelete}`)
+        .delete(`/api/tasks/${taskId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
@@ -133,16 +141,6 @@ describe('Tasks Routes - Error Handling', () => {
   });
 
   describe('PUT /api/tasks/:id', () => {
-    let updateTaskId;
-
-    beforeAll(async () => {
-      const taskRes = await request(app)
-        .post('/api/tasks')
-        .set('Authorization', `Bearer ${token}`)
-        .field('title', 'Task for Update Test');
-      updateTaskId = taskRes.body.id;
-    });
-
     test('❌ Cannot update non-existent task', async () => {
       const res = await request(app)
         .put('/api/tasks/999999')
@@ -153,6 +151,13 @@ describe('Tasks Routes - Error Handling', () => {
     });
 
     test('❌ Cannot update other user task', async () => {
+      // Create a task with the first user
+      const task1Res = await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${token}`)
+        .field('title', 'Task for Another User Update Test');
+      const task1Id = task1Res.body.id;
+
       // Create another user
       const username2 = uniqueUser();
       const registerRes2 = await request(app)
@@ -165,7 +170,7 @@ describe('Tasks Routes - Error Handling', () => {
       const token2 = registerRes2.body.token;
 
       const res = await request(app)
-        .put(`/api/tasks/${updateTaskId}`)
+        .put(`/api/tasks/${task1Id}`)
         .set('Authorization', `Bearer ${token2}`)
         .send({ title: 'Updated' });
 
@@ -207,20 +212,20 @@ describe('Tasks Routes - Error Handling', () => {
 
     test('❌ PUT /api/tasks/:id without token', async () => {
       const res = await request(app)
-        .put(`/api/tasks/${taskId}`)
+        .put(`/api/tasks/${baseTaskId}`)
         .send({ title: 'Test' });
       expect(res.status).toBe(401);
     });
 
     test('❌ DELETE /api/tasks/:id without token', async () => {
       const res = await request(app)
-        .delete(`/api/tasks/${taskId}`);
+        .delete(`/api/tasks/${baseTaskId}`);
       expect(res.status).toBe(401);
     });
 
     test('❌ PATCH /api/tasks/:id/complete without token', async () => {
       const res = await request(app)
-        .patch(`/api/tasks/${taskId}/complete`);
+        .patch(`/api/tasks/${baseTaskId}/complete`);
       expect(res.status).toBe(401);
     });
 

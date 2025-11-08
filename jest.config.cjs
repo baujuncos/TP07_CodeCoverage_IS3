@@ -10,12 +10,22 @@ module.exports = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'cobertura'],
+  
+  // Coverage paths - exclude public/app.js from backend testing
+  collectCoverageFrom: [
+    'src/**/*.js',
+    'server.js',
+    '!**/node_modules/**',
+    '!**/coverage/**',
+    '!**/tests/**'
+  ],
+  
   coverageThreshold: {
     global: { 
-      lines: 20, 
-      functions: 20, 
-      branches: 10, 
-      statements: 20 
+      lines: 80, 
+      functions: 70, 
+      branches: 65, 
+      statements: 80 
     }
   },
   
