@@ -36,8 +36,6 @@ Esto ya lo realizamos en el TP6, pero debimos incluir muchos tests más para aum
 
 ![alt text](image-6.png)
 
-> PAT: 9QnFtT7omOAjHIKQGB6shWG2dRzBeh94cbUAszxKgYV4bVDZUfBIJQQJ99BKACAAAAAAAAAAAAASAZDO1MRJ
-
 * Lo copiamos en SonarCloud para terminar de configurar la organización con Plan Free:
 
 ![alt text](image-7.png)
