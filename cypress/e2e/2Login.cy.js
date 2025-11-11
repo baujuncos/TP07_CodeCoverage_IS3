@@ -1,6 +1,6 @@
    describe('Prueba de Login', () => {
    it('El login es exitoso', () => {
-     cy.visit('/') // Colocar la url local o de Azure de nuestro front
+     cy.visit('https://webapp-tp05-qa-juncos-treachi-fqa5gug9addretfg.canadacentral-01.azurewebsites.net') // Colocar la url local o de Azure de nuestro front
      cy.get('h1').should('contain', 'TikTask') // Verifica que el título contenga "TikTask"
      cy.get('#loginUsername').click();
      cy.get('#loginUsername').type('admin');
