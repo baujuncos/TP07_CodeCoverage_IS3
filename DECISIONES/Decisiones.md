@@ -399,19 +399,19 @@ Detecta Fails en los tests de Cypress aunque hayan pasado correctamente los cuat
               publishRunAttachments: true
 
 
-### **Ejecución exitosa de tests de integración de Cypress en Pipeline:**
+### **Ejecución exitosa de tests de integración de Cypress en Pipeline LUEGO DE HACER DEPLOY EN QA:**
 
 * Instalamos dependencias:
 
-![alt text](image-65.png)
+![alt text](image-84.png)
 
-* Arrancamos la app:
+* Esperamos a la app deployada en QA:
 
-![alt text](image-66.png)
+![alt text](image-67.png)
 
 * Corremos en headless:
 
-![alt text](image-67.png)
+![alt text](image-73.png)
 
 ![alt text](image-68.png)
 
@@ -427,7 +427,7 @@ Detecta Fails en los tests de Cypress aunque hayan pasado correctamente los cuat
 
 * Publicamos los resultados de Cypress:
 
-![alt text](image-73.png)
+![alt text](image-83.png)
 
 ## Agregamos  un check del Quality Gate del Sonar EN NUESTRO PIPELINE que en nuestro caso es el predeterminado de Sonar:
 
@@ -443,17 +443,14 @@ Para lograr que funcione debemos hacer uso de nuestro SonarToken que creamos cas
 
 ## Ejecución exitosa de pipeline final:
 
-![alt text](image-75.png)
+![alt text](image-82.png)
 
-## ¿Cómo bloqueamos deploy si  las pruebas de integración (Cypress) fallan?
+## ¿Cómo detenemos el pipeline si las pruebas de integración (Cypress) fallan?
 
-Esa línea hace que si cualquier test unitario o de Cypress falla,
-el stage completo (Build_Test_Analyze) marca Failed →
-y como nuestro deploy depende de succeeded(), no se ejecuta el stage DeployQA.
+Esa línea hace que si cualquier test de Cypress falla,
+el stage completo (DeployQA) marca Failed.
 
 ![alt text](image-78.png)
-
-![alt text](image-79.png)
 
 ## ¿Cómo bloqueamos deploy si SonarCloud detecta issues críticos?
 
