@@ -132,8 +132,9 @@ stages:
           # 8-quater. RUN CYPRESS TESTS
           - script: |
               echo "=== Running Cypress E2E Tests ==="
-              npx cypress run --browser chrome --headless --reporter junit \
-                --reporter-options "mochaFile=cypress/results/junit-[hash].xml,toConsole=true"
+              npx cypress run --browser chromium --headless --reporter junit \
+                --reporter-options "mochaFile=cypress/results/junit-[hash].xml,toConsole=true" \
+                --config baseUrl=http://localhost:$PORT,pageLoadTimeout=120000,defaultCommandTimeout=15000
             displayName: 'Run Cypress E2E Tests'
             env:
               NODE_ENV: test
