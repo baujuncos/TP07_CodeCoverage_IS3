@@ -6,7 +6,7 @@ describe('Prueba de registro de usuario y creación de Task', () => {
     const uniqueUsername = faker.internet.username();  // username random
     const uniqueEmail = faker.internet.email();        // email random
     
-    cy.visit('https://webapp-tp05-qa-juncos-treachi-fqa5gug9addretfg.canadacentral-01.azurewebsites.net');
+    cy.visit('/');
     
     cy.get('h1').should('contain', 'TikTask');
     cy.get('#showRegister').click();
